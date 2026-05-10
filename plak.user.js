@@ -2,7 +2,7 @@
 // @name         CatWar Plak
 // @namespace    http://tampermonkey.net/
 // @version      1.2
-// @description  Добавляет кнопку "Занять/Освободить" на страницу жалоб (Firebase Edition)
+// @description  Добавляет кнопку "Занять" на страницу жалоб
 // @author       Берсерк
 // @match        https://catwar.net/*
 // @grant        GM_xmlhttpRequest
