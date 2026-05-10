@@ -78,16 +78,22 @@
             });
         }
 
-        function updateUI() {
-            const difficultBtns = document.querySelectorAll('a[href^="plak?set_difficult="]');
-
-            difficultBtns.forEach(btn => {
+function updateUI() {
+            const actionBtns = document.querySelectorAll('a.ignor[href^="plak?cat="]');
+            
+            actionBtns.forEach(btn => {
                 const url = new URL(btn.href, window.location.origin);
-                const ticketId = url.searchParams.get('set_difficult');
+                const ticketId = url.searchParams.get('cat');
+                if (!ticketId) return;
+
                 const pContainer = btn.closest('p');
                 const messagesDiv = btn.closest('.messages');
-                const headerP = messagesDiv.previousElementSibling;
-                const linkEl = headerP.querySelector('b a');
+                if (!messagesDiv) return;
+                
+                const headerP = messagesDiv.previousElementSibling; 
+                if (!headerP) return;
+                
+                const linkEl = headerP.querySelector('b a'); 
 
                 let actionSpan = pContainer.querySelector('.cw-action-span');
                 if (!actionSpan) {
@@ -96,16 +102,15 @@
                     pContainer.appendChild(document.createTextNode(' | '));
                     pContainer.appendChild(actionSpan);
                 }
+                
+                actionSpan.innerHTML = ''; 
 
-                actionSpan.innerHTML = '';
-
-                // Очищаем старые метки "Занял"
                 const oldLabel = headerP.querySelector('.claimer-label');
                 if (oldLabel) oldLabel.remove();
 
                 if (claimsDb[ticketId]) {
                     const claimer = claimsDb[ticketId];
-
+                    
                     const label = document.createElement('span');
                     label.className = 'claimer-label';
                     label.style.fontWeight = 'bold';
@@ -118,19 +123,19 @@
                         headerP.style.backgroundColor = '#d4edda';
                         headerP.style.border = '1px solid #c3e6cb';
                         headerP.style.color = '#155724';
-
+                        
                         const unclaimBtn = document.createElement('a');
                         unclaimBtn.href = '#';
                         unclaimBtn.innerText = 'Освободить';
-                        unclaimBtn.style.color = '#dc3545';
+                        unclaimBtn.style.color = '#dc3545'; 
                         unclaimBtn.style.fontWeight = 'bold';
-                        unclaimBtn.onclick = (e) => {
-                            e.preventDefault();
-                            removeClaim(ticketId);
+                        unclaimBtn.onclick = (e) => { 
+                            e.preventDefault(); 
+                            removeClaim(ticketId); 
                         };
                         actionSpan.appendChild(unclaimBtn);
                     } else {
-                        headerP.style.backgroundColor = '#fdf5e6';
+                        headerP.style.backgroundColor = '#fdf5e6'; 
                         headerP.style.border = '1px solid #faebd7';
                         headerP.style.color = '#8b4513';
                     }
@@ -138,23 +143,23 @@
                     headerP.style.backgroundColor = '';
                     headerP.style.border = '';
                     headerP.style.color = '';
-                    if (linkEl) linkEl.style.color = '';
-
+                    if (linkEl) linkEl.style.color = ''; 
+                    
                     const claimBtn = document.createElement('a');
                     claimBtn.href = '#';
                     claimBtn.innerText = 'Занять';
-                    claimBtn.style.color = '#28a745';
+                    claimBtn.style.color = '#28a745'; 
                     claimBtn.style.fontWeight = 'bold';
-                    claimBtn.onclick = (e) => {
-                        e.preventDefault();
-                        saveClaim(ticketId);
+                    claimBtn.onclick = (e) => { 
+                        e.preventDefault(); 
+                        saveClaim(ticketId); 
                     };
                     actionSpan.appendChild(claimBtn);
                 }
             });
         }
 
-        fetchClaims();
-        setInterval(fetchClaims, 30000);
+        fetchClaims(); 
+        setInterval(fetchClaims, 30000); 
     }
 })();
