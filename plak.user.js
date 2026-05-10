@@ -5,6 +5,7 @@
 // @description  Добавляет кнопку "Занять" на страницу жалоб
 // @author       Берсерк
 // @match        https://catwar.net/*
+// @match        https://catwar.su/*
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
