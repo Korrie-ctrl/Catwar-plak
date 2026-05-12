@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CatWar Plak
 // @namespace    http://tampermonkey.net/
-// @version      1.4
+// @version      1.6
 // @description  Добавляет кнопку "Занять" на страницу жалоб
 // @author       Берсерк
 // @match        https://catwar.net/*
