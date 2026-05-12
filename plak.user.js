@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CatWar Plak
 // @namespace    http://tampermonkey.net/
-// @version      1.2
+// @version      1.5
 // @description  Добавляет кнопку "Занять" на страницу жалоб
 // @author       Берсерк
 // @match        https://catwar.net/*
@@ -12,29 +12,31 @@
 (function() {
     'use strict';
 
-    const DB_URL = 'https://catwar-plak-default-rtdb.europe-west1.firebasedatabase.app/claims.json';
+    const DB_URL = 'https://catwar-plak-default-rtdb.europe-west1.firebasedatabase.app/claims.json'; 
 
     if (window.location.pathname === '/' || window.location.pathname === '/index') {
         const nameEl = document.querySelector('#pr big');
         const idEl = document.querySelector('#id_val');
-
+        
         if (nameEl && idEl) {
             localStorage.setItem('cw_mod_name', nameEl.innerText.trim());
             localStorage.setItem('cw_mod_id', idEl.innerText.trim());
         }
-        return;
+        return; 
     }
 
-    if (window.location.pathname === '/plak') {
+    const allowedPages = ['/plak', '/support'];
+    
+    if (allowedPages.includes(window.location.pathname)) {
         const myId = localStorage.getItem('cw_mod_id');
         const myName = localStorage.getItem('cw_mod_name');
 
         if (!myId || !myName) {
-            console.warn('CatWar Plak Claimer: Не найдены данные пользователя. Зайди на страницу "мой кот".');
+            console.warn('CatWar Claimer: Не найдены данные пользователя. Зайди на страницу "мой кот".');
             return;
         }
 
-        let claimsDb = {};
+        let claimsDb = {}; 
 
         function fetchClaims() {
             GM_xmlhttpRequest({
@@ -78,8 +80,8 @@
             });
         }
 
-function updateUI() {
-            const actionBtns = document.querySelectorAll('a.ignor[href^="plak?cat="]');
+        function updateUI() {
+            const actionBtns = document.querySelectorAll('a.ignor');
             
             actionBtns.forEach(btn => {
                 const url = new URL(btn.href, window.location.origin);
