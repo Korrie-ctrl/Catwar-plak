@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         CatWar Plak
 // @namespace    http://tampermonkey.net/
-// @version      4.0
+// @version      4.1
 // @description  Объединенный скрипт: кнопки брони (с фиксом), таймеры, шаблоны ответов и система тегов/заметок
-// @author       Берсерк + Мыша + Панк-Рок
+// @author       Берсерк + Мыша + Панк-Рок 
 // @match        https://catwar.net/*
 // @match        https://catwar.su/*
 // @grant        GM_xmlhttpRequest
@@ -232,23 +232,35 @@
                     if (linkEl) linkEl.style.color = '#000000';
 
                     if (claimer.id === myId) {
-                        headerP.style.cssText += 'background-color:#d4edda;border:1px solid #c3e6cb;color:#155724;';
+                        headerP.style.backgroundColor = '#d4edda';
+                        headerP.style.border = '1px solid #c3e6cb';
+                        headerP.style.color = '#155724';
+                        
                         const unclaimBtn = document.createElement('a');
-                        unclaimBtn.href = '#'; unclaimBtn.innerText = 'Освободить';
-                        unclaimBtn.style.cssText = 'color:#dc3545;font-weight:bold;';
+                        unclaimBtn.href = '#'; 
+                        unclaimBtn.innerText = 'Освободить';
+                        unclaimBtn.style.color = '#dc3545';
+                        unclaimBtn.style.fontWeight = 'bold';
                         unclaimBtn.onclick = (e) => { e.preventDefault(); removeClaim(ticketId); };
                         actionSpan.appendChild(unclaimBtn);
                     } else {
-                        headerP.style.cssText += 'background-color:#fdf5e6;border:1px solid #faebd7;color:#8b4513;';
+                        headerP.style.backgroundColor = '#fdf5e6';
+                        headerP.style.border = '1px solid #faebd7';
+                        headerP.style.color = '#8b4513';
                     }
                 } else {
-                    headerP.style.border = ''; headerP.style.color = '';
+                    headerP.style.border = ''; 
+                    headerP.style.color = '';
                     if (linkEl) linkEl.style.color = ''; 
-                    if (!messagesDiv.innerText.includes('Забронировал')) headerP.style.backgroundColor = '';
+                    if (!messagesDiv.innerText.includes('Забронировал')) {
+                        headerP.style.backgroundColor = '';
+                    }
                     
                     const claimBtn = document.createElement('a');
-                    claimBtn.href = '#'; claimBtn.innerText = 'Занять';
-                    claimBtn.style.cssText = 'color:#28a745;font-weight:bold;';
+                    claimBtn.href = '#'; 
+                    claimBtn.innerText = 'Занять';
+                    claimBtn.style.color = '#28a745';
+                    claimBtn.style.fontWeight = 'bold';
                     claimBtn.onclick = (e) => { e.preventDefault(); saveClaim(ticketId); };
                     actionSpan.appendChild(claimBtn);
                 }
@@ -270,7 +282,6 @@
         if (myId) { fetchClaims(); setInterval(fetchClaims, 30000); }
     }
 
-// === БЛОК 3: ШАБЛОНЫ ОТВЕТОВ (для /plak, /saint_rabbit, /support) ===
     if (path.startsWith('/plak') || path.startsWith('/saint_rabbit') || path.startsWith('/support')) {
         const templates = {
             "Налог": `Здравствуйте,\n\nСожалею, но для оказания данной услуги Вам необходимо оплатить [url=https://catwar.net/rabbit_universe_new]налог за локации[/url]. Если эта функция недоступна на данный момент, подождите 2-3 дня.\n\nС уважением, Святой Кроль`,
@@ -342,7 +353,6 @@
             setTimeout(() => {
                 addTemplatesToTickets();
                 setTimeout(() => {
-                    // Восстановлен оригинальный костыль: если умный поиск не сработал, ставим через простой
                     if (document.querySelectorAll('.catwar-templates').length === 0) {
                         addTemplatesSimple();
                     }
