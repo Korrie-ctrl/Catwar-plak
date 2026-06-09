@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CatWar Admin Helper: Бронь + Таймеры + Шаблоны + Теги
 // @namespace    http://tampermonkey.net/
-// @version      4.2
+// @version      4.3
 // @description  Объединенный скрипт: кнопки брони (с фиксом), таймеры, шаблоны ответов и система тегов/заметок
 // @author       Берсерк + Мыша + Панк-Рок (Слияние)
 // @match        https://catwar.net/*
@@ -10,6 +10,8 @@
 // @grant        GM_addStyle
 // @connect      script.google.com
 // @connect      script.googleusercontent.com
+// @connect      catwar-plak-default-rtdb.europe-west1.firebasedatabase.app
+// @connect      firebasedatabase.app
 // ==/UserScript==
 
 (function() {
