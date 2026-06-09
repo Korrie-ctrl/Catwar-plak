@@ -270,6 +270,7 @@
         if (myId) { fetchClaims(); setInterval(fetchClaims, 30000); }
     }
 
+// === БЛОК 3: ШАБЛОНЫ ОТВЕТОВ (для /plak, /saint_rabbit, /support) ===
     if (path.startsWith('/plak') || path.startsWith('/saint_rabbit') || path.startsWith('/support')) {
         const templates = {
             "Налог": `Здравствуйте,\n\nСожалею, но для оказания данной услуги Вам необходимо оплатить [url=https://catwar.net/rabbit_universe_new]налог за локации[/url]. Если эта функция недоступна на данный момент, подождите 2-3 дня.\n\nС уважением, Святой Кроль`,
@@ -318,19 +319,56 @@
             return panel;
         }
 
-        function addTemplates() {
+        function addTemplatesToTickets() {
             document.querySelectorAll('textarea').forEach((textarea) => {
                 const parentText = textarea.parentElement ? textarea.parentElement.textContent : '';
                 if (parentText.includes('Сохранить блокнот')) return;
                 if (!(parentText.includes('Отправить') || parentText.includes('Пометить прочитанным') || parentText.includes('Забронировать'))) return;
-                if (textarea.previousElementSibling && textarea.previousElementSibling.classList.contains('catwar-templates')) return;
+                if (textarea.previousElementSibling && textarea.previousElementSibling.classList && textarea.previousElementSibling.classList.contains('catwar-templates')) return;
                 textarea.parentNode.insertBefore(createTemplatePanel(textarea), textarea);
             });
         }
 
-        window.addEventListener('load', () => setTimeout(addTemplates, 1500));
-        new MutationObserver(() => setTimeout(addTemplates, 500)).observe(document.body, { childList: true, subtree: true });
-        
+        function addTemplatesSimple() {
+            const allTextAreas = document.querySelectorAll('textarea');
+            for (let i = 1; i < allTextAreas.length; i++) {
+                const textarea = allTextAreas[i];
+                if (textarea.previousElementSibling && textarea.previousElementSibling.classList && textarea.previousElementSibling.classList.contains('catwar-templates')) continue;
+                textarea.parentNode.insertBefore(createTemplatePanel(textarea), textarea);
+            }
+        }
+
+        function initTemplates() {
+            setTimeout(() => {
+                addTemplatesToTickets();
+                setTimeout(() => {
+                    // Восстановлен оригинальный костыль: если умный поиск не сработал, ставим через простой
+                    if (document.querySelectorAll('.catwar-templates').length === 0) {
+                        addTemplatesSimple();
+                    }
+                }, 500);
+            }, 1500);
+        }
+
+        window.addEventListener('load', initTemplates);
+
+        const templateObserver = new MutationObserver(() => {
+            setTimeout(addTemplatesSimple, 500);
+        });
+
+        templateObserver.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        setInterval(() => {
+            const panels = document.querySelectorAll('.catwar-templates');
+            const textAreas = document.querySelectorAll('textarea');
+            if (textAreas.length > 1 && panels.length < textAreas.length - 1) {
+                addTemplatesSimple();
+            }
+        }, 3000);
+
         const style = document.createElement('style');
         style.textContent = `.catwar-templates button:hover::after { content: attr(title); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); color: #e0e0e0; padding: 8px; border-radius: 4px; font-size: 11px; white-space: pre-wrap; max-width: 300px; z-index: 1000; margin-bottom: 5px; pointer-events: none; border: 1px solid #555; text-align: left; }`;
         document.head.appendChild(style);
