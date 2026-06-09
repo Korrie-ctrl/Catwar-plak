@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         CatWar Plak
+// @name         CatWar Admin Helper: Бронь + Таймеры + Теги
 // @namespace    http://tampermonkey.net/
-// @version      5.0
-// @description  Стабильная сборка без шаблонов: кнопки брони (с фиксом), время брони и система тегов/заметок
+// @version      4.0
+// @description  Объединенный скрипт: кнопки брони (с фиксом), таймеры, шаблоны ответов и система тегов/заметок
 // @author       Берсерк + Мыша + Панк-Рок
 // @match        https://catwar.net/*
 // @match        https://catwar.su/*
@@ -131,14 +131,7 @@
 
                     const marker = document.createElement('span');
                     marker.className = 'booked-marker';
-                    marker.style.display = 'inline-block';
-                    marker.style.width = '10px';
-                    marker.style.height = '10px';
-                    marker.style.backgroundColor = '#000000';
-                    marker.style.marginRight = '8px';
-                    marker.style.borderRadius = '2px';
-                    marker.style.flexShrink = '0';
-                    marker.style.cursor = 'pointer';
+                    marker.style.cssText = 'display:inline-block;width:10px;height:10px;background-color:#000;margin-right:8px;border-radius:2px;flex-shrink:0;cursor:pointer;';
 
                     let bookingInfo = '', bookingTime = '', totalMinutes = 0;
                     const bookingMatch = messagesDiv.innerHTML.match(/Забронировал\(а\)\s+<a\s+href="\/cat\d+">([^<]+)<\/a>\s+([^<|]+?)(?:\s*[|<]|\s*$)/);
@@ -162,10 +155,7 @@
                     if (totalMinutes >= 120) {
                         const ageSpan = document.createElement('span');
                         ageSpan.className = 'booking-age';
-                        ageSpan.style.fontSize = '11px';
-                        ageSpan.style.fontWeight = 'bold';
-                        ageSpan.style.marginLeft = '8px';
-                        ageSpan.style.color = '#ff4444';
+                        ageSpan.style.cssText = 'font-size:11px;font-weight:bold;margin-left:8px;color:#ff4444;';
                         ageSpan.textContent = `(${ageCategory})`;
                         toggle.appendChild(ageSpan);
                     }
@@ -224,8 +214,7 @@
                 if (!actionSpan) {
                     actionSpan = document.createElement('span');
                     actionSpan.className = 'cw-action-span';
-                    pContainer.append(document.createTextNode(' | '));
-                    pContainer.append(actionSpan);
+                    pContainer.append(document.createTextNode(' | '), actionSpan);
                 }
                 actionSpan.innerHTML = ''; 
 
@@ -243,35 +232,23 @@
                     if (linkEl) linkEl.style.color = '#000000';
 
                     if (claimer.id === myId) {
-                        headerP.style.backgroundColor = '#d4edda';
-                        headerP.style.border = '1px solid #c3e6cb';
-                        headerP.style.color = '#155724';
-                        
+                        headerP.style.cssText += 'background-color:#d4edda;border:1px solid #c3e6cb;color:#155724;';
                         const unclaimBtn = document.createElement('a');
-                        unclaimBtn.href = '#'; 
-                        unclaimBtn.innerText = 'Освободить';
-                        unclaimBtn.style.color = '#dc3545';
-                        unclaimBtn.style.fontWeight = 'bold';
+                        unclaimBtn.href = '#'; unclaimBtn.innerText = 'Освободить';
+                        unclaimBtn.style.cssText = 'color:#dc3545;font-weight:bold;';
                         unclaimBtn.onclick = (e) => { e.preventDefault(); removeClaim(ticketId); };
                         actionSpan.appendChild(unclaimBtn);
                     } else {
-                        headerP.style.backgroundColor = '#fdf5e6';
-                        headerP.style.border = '1px solid #faebd7';
-                        headerP.style.color = '#8b4513';
+                        headerP.style.cssText += 'background-color:#fdf5e6;border:1px solid #faebd7;color:#8b4513;';
                     }
                 } else {
-                    headerP.style.border = ''; 
-                    headerP.style.color = '';
+                    headerP.style.border = ''; headerP.style.color = '';
                     if (linkEl) linkEl.style.color = ''; 
-                    if (!messagesDiv.innerText.includes('Забронировал')) {
-                        headerP.style.backgroundColor = '';
-                    }
+                    if (!messagesDiv.innerText.includes('Забронировал')) headerP.style.backgroundColor = '';
                     
                     const claimBtn = document.createElement('a');
-                    claimBtn.href = '#'; 
-                    claimBtn.innerText = 'Занять';
-                    claimBtn.style.color = '#28a745';
-                    claimBtn.style.fontWeight = 'bold';
+                    claimBtn.href = '#'; claimBtn.innerText = 'Занять';
+                    claimBtn.style.cssText = 'color:#28a745;font-weight:bold;';
                     claimBtn.onclick = (e) => { e.preventDefault(); saveClaim(ticketId); };
                     actionSpan.appendChild(claimBtn);
                 }
@@ -292,7 +269,7 @@
         new MutationObserver(processBookedMessages).observe(document.body, { childList: true, subtree: true });
         if (myId) { fetchClaims(); setInterval(fetchClaims, 30000); }
     }
-
+    
     if (path.startsWith('/plak')) {
         (function() {
             const API_URL = 'https://script.google.com/macros/s/AKfycbxlofeuEtCo6uVfm2ogwFT_izt8OaihfPXpvwANnGhHe_I-yHk2DZYPh_RLI92fHKtu/exec';
