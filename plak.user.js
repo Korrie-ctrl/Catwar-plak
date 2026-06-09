@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CatWar Admin Helper: Бронь + Таймеры + Шаблоны + Теги
 // @namespace    http://tampermonkey.net/
-// @version      4.0
+// @version      4.2
 // @description  Объединенный скрипт: кнопки брони (с фиксом), таймеры, шаблоны ответов и система тегов/заметок
 // @author       Берсерк + Мыша + Панк-Рок (Слияние)
 // @match        https://catwar.net/*
@@ -129,7 +129,7 @@
                 if (!messagesDiv) return;
 
                 if (messagesDiv.innerText.includes('Забронировал')) {
-                    toggle.style.background = 'RGBA(255, 255, 102, 0.18)';
+                    toggle.style.backgroundColor = 'rgba(255, 255, 102, 0.18)';
                     if (toggle.querySelector('.booked-marker')) return;
 
                     const marker = document.createElement('span');
@@ -236,29 +236,45 @@
                     if (linkEl) linkEl.style.color = '#000000';
 
                     if (claimer.id === myId) {
-                        headerP.style.cssText += 'background-color:#d4edda;border:1px solid #c3e6cb;color:#155724;';
+                        headerP.style.backgroundColor = '#d4edda';
+                        headerP.style.border = '1px solid #c3e6cb';
+                        headerP.style.color = '#155724';
+                        
                         const unclaimBtn = document.createElement('a');
-                        unclaimBtn.href = '#'; unclaimBtn.innerText = 'Освободить';
-                        unclaimBtn.style.cssText = 'color:#dc3545;font-weight:bold;';
+                        unclaimBtn.href = '#'; 
+                        unclaimBtn.innerText = 'Освободить';
+                        unclaimBtn.style.color = '#dc3545';
+                        unclaimBtn.style.fontWeight = 'bold';
                         unclaimBtn.onclick = (e) => { e.preventDefault(); removeClaim(ticketId); };
                         actionSpan.appendChild(unclaimBtn);
                     } else {
-                        headerP.style.cssText += 'background-color:#fdf5e6;border:1px solid #faebd7;color:#8b4513;';
+                        headerP.style.backgroundColor = '#fdf5e6';
+                        headerP.style.border = '1px solid #faebd7';
+                        headerP.style.color = '#8b4513';
                     }
                 } else {
-                    headerP.style.border = ''; headerP.style.color = '';
+                    headerP.style.border = ''; 
+                    headerP.style.color = '';
                     if (linkEl) linkEl.style.color = ''; 
-                    if (!messagesDiv.innerText.includes('Забронировал')) headerP.style.backgroundColor = '';
+                    
+                    if (messagesDiv.innerText.includes('Забронировал')) {
+                        headerP.style.backgroundColor = 'rgba(255, 255, 102, 0.18)';
+                    } else {
+                        headerP.style.backgroundColor = '';
+                    }
                     
                     const claimBtn = document.createElement('a');
-                    claimBtn.href = '#'; claimBtn.innerText = 'Занять';
-                    claimBtn.style.cssText = 'color:#28a745;font-weight:bold;';
+                    claimBtn.href = '#'; 
+                    claimBtn.innerText = 'Занять';
+                    claimBtn.style.color = '#28a745';
+                    claimBtn.style.fontWeight = 'bold';
                     claimBtn.onclick = (e) => { e.preventDefault(); saveClaim(ticketId); };
                     actionSpan.appendChild(claimBtn);
                 }
             });
         }
 
+        // Исправление: Бронь снимается при ответе ЛЮБОГО модератора
         document.addEventListener('submit', function(event) {
             const form = event.target;
             if (form && form.tagName === 'FORM') {
@@ -269,9 +285,17 @@
             }
         });
 
+        // Запуск модулей бронирования
         processBookedMessages();
-        new MutationObserver(processBookedMessages).observe(document.body, { childList: true, subtree: true });
-        if (myId) { fetchClaims(); setInterval(fetchClaims, 30000); }
+        const plakObserver = new MutationObserver(function() {
+            processBookedMessages();
+        });
+        plakObserver.observe(document.body, { childList: true, subtree: true });
+
+        if (myId) {
+            fetchClaims(); 
+            setInterval(fetchClaims, 30000); 
+        }
     }
 
     // === БЛОК 3: ШАБЛОНЫ ОТВЕТОВ (для /plak, /saint_rabbit, /support) ===
@@ -323,19 +347,55 @@
             return panel;
         }
 
-        function addTemplates() {
+        function addTemplatesToTickets() {
             document.querySelectorAll('textarea').forEach((textarea) => {
                 const parentText = textarea.parentElement ? textarea.parentElement.textContent : '';
                 if (parentText.includes('Сохранить блокнот')) return;
                 if (!(parentText.includes('Отправить') || parentText.includes('Пометить прочитанным') || parentText.includes('Забронировать'))) return;
-                if (textarea.previousElementSibling && textarea.previousElementSibling.classList.contains('catwar-templates')) return;
+                if (textarea.previousElementSibling && textarea.previousElementSibling.classList && textarea.previousElementSibling.classList.contains('catwar-templates')) return;
                 textarea.parentNode.insertBefore(createTemplatePanel(textarea), textarea);
             });
         }
 
-        window.addEventListener('load', () => setTimeout(addTemplates, 1500));
-        new MutationObserver(() => setTimeout(addTemplates, 500)).observe(document.body, { childList: true, subtree: true });
-        
+        function addTemplatesSimple() {
+            const allTextAreas = document.querySelectorAll('textarea');
+            for (let i = 1; i < allTextAreas.length; i++) {
+                const textarea = allTextAreas[i];
+                if (textarea.previousElementSibling && textarea.previousElementSibling.classList && textarea.previousElementSibling.classList.contains('catwar-templates')) continue;
+                textarea.parentNode.insertBefore(createTemplatePanel(textarea), textarea);
+            }
+        }
+
+        function initTemplates() {
+            setTimeout(() => {
+                addTemplatesToTickets();
+                setTimeout(() => {
+                    if (document.querySelectorAll('.catwar-templates').length === 0) {
+                        addTemplatesSimple();
+                    }
+                }, 500);
+            }, 1500);
+        }
+
+        window.addEventListener('load', initTemplates);
+
+        const templateObserver = new MutationObserver(() => {
+            setTimeout(addTemplatesSimple, 500);
+        });
+
+        templateObserver.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        setInterval(() => {
+            const panels = document.querySelectorAll('.catwar-templates');
+            const textAreas = document.querySelectorAll('textarea');
+            if (textAreas.length > 1 && panels.length < textAreas.length - 1) {
+                addTemplatesSimple();
+            }
+        }, 3000);
+
         const style = document.createElement('style');
         style.textContent = `.catwar-templates button:hover::after { content: attr(title); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); color: #e0e0e0; padding: 8px; border-radius: 4px; font-size: 11px; white-space: pre-wrap; max-width: 300px; z-index: 1000; margin-bottom: 5px; pointer-events: none; border: 1px solid #555; text-align: left; }`;
         document.head.appendChild(style);
