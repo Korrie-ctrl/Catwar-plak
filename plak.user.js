@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         CatWar Plak
+// @name         CatWar Admin Helper: Бронь + Таймеры + Шаблоны + Теги
 // @namespace    http://tampermonkey.net/
 // @version      4.0
 // @description  Объединенный скрипт: кнопки брони (с фиксом), таймеры, шаблоны ответов и система тегов/заметок
-// @author       Берсерк + Мыша + Панк-Рок
+// @author       Берсерк + Мыша + Панк-Рок (Слияние)
 // @match        https://catwar.net/*
 // @match        https://catwar.su/*
 // @grant        GM_xmlhttpRequest
@@ -17,6 +17,7 @@
 
     const path = window.location.pathname;
 
+    // === БЛОК 1: ПАРСИНГ ДАННЫХ ПОЛЬЗОВАТЕЛЯ (НА ГЛАВНОЙ) ===
     if (path === '/' || path === '/index') {
         const nameEl = document.querySelector('#pr big');
         const idEl = document.querySelector('#id_val');
@@ -28,9 +29,11 @@
         return; 
     }
 
+    // === БЛОК 2: ФУНКЦИОНАЛ БРОНИ И ТАЙМЕРОВ (только для /plak) ===
     if (path.startsWith('/plak')) {
         const DB_URL = 'https://catwar-plak-default-rtdb.europe-west1.firebasedatabase.app/claims.json'; 
 
+        // --- 2.1 Отображение забронированных и времени (от Мыши) ---
         function parseBookingTime(timeStr) {
             const now = new Date();
             const mskOffset = 3;
@@ -166,6 +169,7 @@
             });
         }
 
+        // --- 2.2 Функционал кнопок Занять/Освободить (от Берсерка) ---
         const myId = localStorage.getItem('cw_mod_id');
         const myName = localStorage.getItem('cw_mod_name');
         let claimsDb = {}; 
@@ -269,7 +273,75 @@
         new MutationObserver(processBookedMessages).observe(document.body, { childList: true, subtree: true });
         if (myId) { fetchClaims(); setInterval(fetchClaims, 30000); }
     }
-    
+
+    // === БЛОК 3: ШАБЛОНЫ ОТВЕТОВ (для /plak, /saint_rabbit, /support) ===
+    if (path.startsWith('/plak') || path.startsWith('/saint_rabbit') || path.startsWith('/support')) {
+        const templates = {
+            "Налог": `Здравствуйте,\n\nСожалею, но для оказания данной услуги Вам необходимо оплатить [url=https://catwar.net/rabbit_universe_new]налог за локации[/url]. Если эта функция недоступна на данный момент, подождите 2-3 дня.\n\nС уважением, Святой Кроль`,
+            "К Почтовику": `Здравствуйте,\n\nВопросы, касающиеся нарушения общих правил игры (ОПИ), рассматривает [url=https://catwar.net/cat7272]Почтовик[/url]. Обратитесь, пожалуйста, к нему.\n\nС уважением, Святой Кроль`,
+            "Мошенничество": `Здравствуйте,\n\nВопросы, касающиеся мошенничества (ОПИ3.6), включая случаи с участием кролей, рассматривает [url=https://catwar.net/cat7272]Почтовик[/url]. Обратитесь, пожалуйста, к нему.\n\nС уважением, Святой Кроль`,
+            "К Почемугриву": `Здравствуйте,\n\nЕсли Вы считаете, что произошёл баг, пожалуйста, обратитесь к [url=https://catwar.net/cat/support]Почемугриву[/url].\n\nС уважением, Святой Кроль`,
+            "Ошиб. блок": `Здравствуйте,\n\nЕсли Вы считаете, что произошла ошибка, обратитесь к [url=https://catwar.net/cat7272]Почтовику[/url]. Уверяю Вас, если действительно возникла ошибка, то Вам обязательно помогут.\n\nС уважением, Святой Кроль`,
+            "Перенос пропуска": `Здравствуйте,\n\nВопросы, касающиеся переноса пропуска, рассматривает [url=https://catwar.net/cat25235]Перепись[/url]. Обратитесь, пожалуйста, к ней.\n\nС уважением, Святой Кроль`
+        };
+
+        function createTemplatePanel(textarea) {
+            const panel = document.createElement('div');
+            panel.className = 'catwar-templates';
+            panel.style.cssText = `margin:10px 0;padding:12px;background:rgb(38,38,38);border-radius:8px;border:1px solid #555;color:#e0e0e0;font-family:Arial,sans-serif;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,0.3);`;
+            
+            panel.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <div style="font-weight:bold;font-size:14px;display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:16px;">🐇</span><span>Быстрые ответы</span>
+                    </div>
+                    <span class="close-templates" style="cursor:pointer;font-size:18px;opacity:0.7;padding:0 5px;line-height:1;color:#aaa;" title="Скрыть шаблоны">×</span>
+                </div>
+            `;
+
+            const btnContainer = document.createElement('div');
+            btnContainer.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));gap:6px;';
+
+            Object.entries(templates).forEach(([name, text]) => {
+                const btn = document.createElement('button');
+                btn.textContent = name; btn.title = text;
+                btn.style.cssText = 'padding:6px 8px;background:#4a4a4a;color:#e0e0e0;border:1px solid #666;border-radius:4px;cursor:pointer;font-size:11px;font-weight:500;transition:all 0.2s;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;';
+                btn.onmouseenter = () => { btn.style.background = '#5a5a5a'; btn.style.borderColor = '#777'; };
+                btn.onmouseleave = () => { btn.style.background = '#4a4a4a'; btn.style.borderColor = '#666'; };
+                btn.onclick = (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    textarea.value = text; textarea.focus();
+                    const origBg = btn.style.background, origCol = btn.style.color;
+                    btn.style.background = '#2e7d32'; btn.style.color = 'white';
+                    setTimeout(() => { btn.style.background = origBg; btn.style.color = origCol; }, 300);
+                };
+                btnContainer.appendChild(btn);
+            });
+
+            panel.appendChild(btnContainer);
+            panel.querySelector('.close-templates').onclick = (e) => { e.preventDefault(); e.stopPropagation(); panel.style.display = 'none'; };
+            return panel;
+        }
+
+        function addTemplates() {
+            document.querySelectorAll('textarea').forEach((textarea) => {
+                const parentText = textarea.parentElement ? textarea.parentElement.textContent : '';
+                if (parentText.includes('Сохранить блокнот')) return;
+                if (!(parentText.includes('Отправить') || parentText.includes('Пометить прочитанным') || parentText.includes('Забронировать'))) return;
+                if (textarea.previousElementSibling && textarea.previousElementSibling.classList.contains('catwar-templates')) return;
+                textarea.parentNode.insertBefore(createTemplatePanel(textarea), textarea);
+            });
+        }
+
+        window.addEventListener('load', () => setTimeout(addTemplates, 1500));
+        new MutationObserver(() => setTimeout(addTemplates, 500)).observe(document.body, { childList: true, subtree: true });
+        
+        const style = document.createElement('style');
+        style.textContent = `.catwar-templates button:hover::after { content: attr(title); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); color: #e0e0e0; padding: 8px; border-radius: 4px; font-size: 11px; white-space: pre-wrap; max-width: 300px; z-index: 1000; margin-bottom: 5px; pointer-events: none; border: 1px solid #555; text-align: left; }`;
+        document.head.appendChild(style);
+    }
+
+    // === БЛОК 4: ЗАМЕТКИ И ТЕГИ (от Панк-Рок, только для /plak) ===
     if (path.startsWith('/plak')) {
         (function() {
             const API_URL = 'https://script.google.com/macros/s/AKfycbxlofeuEtCo6uVfm2ogwFT_izt8OaihfPXpvwANnGhHe_I-yHk2DZYPh_RLI92fHKtu/exec';
