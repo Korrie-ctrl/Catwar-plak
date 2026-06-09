@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      4.0
 // @description  Объединенный скрипт: кнопки брони (с фиксом), таймеры, шаблоны ответов и система тегов/заметок
-// @author       Берсерк + Мыша + Панк-Рок
+// @author       Берсерк + Мыша + Панк-Рок (Слияние)
 // @match        https://catwar.net/*
 // @match        https://catwar.su/*
 // @grant        GM_xmlhttpRequest
@@ -492,4 +492,125 @@
                         tagContainer.appendChild(badge);
                     });
                 } else {
-                    const btn = document.createElement('div'); btn.className = 'cn-add-btn'; btn.innerHTML
+                    const btn = document.createElement('div'); btn.className = 'cn-add-btn'; btn.innerHTML = ICONS.tag;
+                    btn.title = data.history?.tag ? "Добавить теги (есть архив)" : "Добавить теги";
+                    if (data.history?.tag) btn.style.borderColor = '#fd7e14';
+                    btn.addEventListener('click', toggleTag);
+                    tagContainer.appendChild(btn);
+                }
+
+                const noteContainer = document.createElement('div');
+                const toggleNote = () => { const p = wrap.querySelector('.note-popup'); const isActive = p?.classList.contains('active'); closeAllPopups(); if (!isActive && p) { wrap.classList.add('active-wrap'); p.classList.add('active'); } };
+
+                if (data.title) {
+                    const titleEl = document.createElement('span'); titleEl.className = 'cn-title'; titleEl.style.color = data.titleColor || '#0056b3'; titleEl.textContent = '📝 ' + data.title;
+                    const popup = document.createElement('div'); popup.className = 'cn-popup note-popup';
+                    let hHtml = '';
+                    if (data.history?.note) { const h = data.history.note; hHtml = `<div class="cn-history-block"><b>Архив от ${new Date(h.archivedAt).toLocaleString('ru-RU')} <span class="cn-author-tag">${h.archivedBy || '?'}</span>:</b>Заголовок: <i>${h.title}</i><br>Описание: <i>${h.desc}</i></div>`; }
+
+                    popup.innerHTML = `<div class="cn-header"><strong>Детали заметки</strong><span class="cn-close">&times;</span></div>${hHtml}<div class="cn-text">${data.desc || 'Нет описания'}</div><div class="cn-controls"><button class="cn-btn edit" title="Изменить">${ICONS.edit}</button><button class="cn-btn archive" title="В архив">${ICONS.archive}</button><button class="cn-btn delete" title="Удалить">${ICONS.trash}</button></div>${noteDateStr ? `<div class="cn-timestamp">Обновил(а) <b>${data.noteAuthor || '?'}</b> (${noteDateStr})</div>` : ''}`;
+
+                    titleEl.addEventListener('click', toggleNote);
+                    popup.querySelector('.cn-close').addEventListener('click', () => { popup.classList.remove('active'); wrap.classList.remove('active-wrap'); });
+                    popup.querySelector('.edit').addEventListener('click', () => { closeAllPopups(); renderNoteEditor(wrap, userId, data); });
+                    popup.querySelector('.archive').addEventListener('click', () => {
+                        if(!confirm('В архив?')) return;
+                        const newHist = data.history || {}; newHist.note = { title: data.title, desc: data.desc, archivedAt: new Date().toISOString(), archivedBy: CURRENT_USER };
+                        popup.querySelector('.archive').innerHTML = '<span class="cn-loader" style="margin:0"></span>';
+                        syncData(userId, { ...data, title: '', desc: '', titleColor: '#0056b3', noteTimestamp: '', noteAuthor: '', history: newHist }, () => renderUI(wrap, userId));
+                    });
+                    popup.querySelector('.delete').addEventListener('click', () => { if(confirm('Удалить навсегда?')) syncData(userId, { ...data, title: '', desc: '', noteTimestamp: '', noteAuthor: '' }, () => renderUI(wrap, userId)); });
+                    noteContainer.append(titleEl, popup);
+                } else {
+                    const btn = document.createElement('div'); btn.className = 'cn-add-btn'; btn.innerHTML = ICONS.note;
+                    btn.title = data.history?.note ? "Добавить заметку (есть архив)" : "Добавить заметку";
+                    if (data.history?.note) btn.style.borderColor = '#fd7e14';
+                    btn.addEventListener('click', () => { const isOpen = wrap.querySelector('.note-popup.active'); closeAllPopups(); if (!isOpen) renderNoteEditor(wrap, userId, data); });
+                    noteContainer.appendChild(btn);
+                }
+                wrap.append(tagContainer, noteContainer);
+            }
+
+            function renderTagEditor(wrap, userId, data, tagDateStr) {
+                renderUI(wrap, userId); wrap.classList.add('active-wrap');
+                const popup = document.createElement('div'); popup.className = 'cn-popup tag-popup active';
+                let hHtml = '';
+                if (data.history?.tag) { const h = data.history.tag; hHtml = `<div class="cn-history-block"><b>Неактуально с ${new Date(h.archivedAt).toLocaleString('ru-RU')} <span class="cn-author-tag">${h.archivedBy || '?'}</span>:</b>Были теги: <i>${h.text}</i></div>`; }
+
+                const tagsArray = data.tagText ? data.tagText.split(',').filter(t => t.trim() !== '') : [];
+                let cbHtml = '<div class="cn-checkbox-group">';
+                for (const [name, color] of Object.entries(TAG_PRESETS)) cbHtml += `<label class="cn-checkbox-label" data-tag="${name.toLowerCase()}"><input type="checkbox" value="${name}" ${tagsArray.includes(name) ? 'checked' : ''}><span class="cn-checkbox-dot" style="background-color: ${color}"></span>${name}</label>`;
+                cbHtml += '</div>';
+
+                popup.innerHTML = `<div class="cn-header"><strong>Настройка тегов</strong></div>${hHtml}<input type="text" class="cn-search-input" placeholder="Поиск..." autofocus>${cbHtml}<div class="cn-controls"><button class="cn-btn delete" title="Очистить">${ICONS.trash}</button>${data.tagText ? `<button class="cn-btn archive" title="В архив">${ICONS.archive}</button>` : ''}<div style="flex-grow:1"></div><button class="cn-btn save" title="Сохранить">${ICONS.save}</button><button class="cn-btn cancel" title="Отмена">${ICONS.cancel}</button></div>${tagDateStr ? `<div class="cn-timestamp">Обновил(а): <b>${data.tagAuthor || '?'}</b> (${tagDateStr})</div>` : ''}`;
+                wrap.children[0].appendChild(popup);
+
+                const search = popup.querySelector('.cn-search-input'), labels = popup.querySelectorAll('.cn-checkbox-label');
+                search.addEventListener('input', e => {
+                    const q = e.target.value.toLowerCase().trim();
+                    labels.forEach(l => l.classList.toggle('cn-hidden', !l.getAttribute('data-tag').includes(q)));
+                });
+
+                const saveAction = () => {
+                    const selected = Array.from(popup.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value).join(',');
+                    popup.querySelector('.save').innerHTML = '<span class="cn-loader" style="margin:0"></span>';
+                    syncData(userId, { ...data, tagText: selected, tagTimestamp: new Date().toISOString(), tagAuthor: CURRENT_USER }, () => renderUI(wrap, userId));
+                };
+
+                const archiveBtn = popup.querySelector('.archive');
+                if (archiveBtn) archiveBtn.addEventListener('click', () => {
+                    if(!confirm('В архив?')) return;
+                    const newHist = data.history || {}; newHist.tag = { text: data.tagText, archivedAt: new Date().toISOString(), archivedBy: CURRENT_USER };
+                    archiveBtn.innerHTML = '<span class="cn-loader" style="margin:0"></span>';
+                    syncData(userId, { ...data, tagText: '', tagTimestamp: '', tagAuthor: '', history: newHist }, () => renderUI(wrap, userId));
+                });
+
+                popup.querySelector('.save').addEventListener('click', saveAction);
+                popup.querySelector('.delete').addEventListener('click', () => syncData(userId, { ...data, tagText: '', tagTimestamp: '', tagAuthor: '' }, () => renderUI(wrap, userId)));
+                popup.querySelector('.cancel').addEventListener('click', () => renderUI(wrap, userId));
+                popup.addEventListener('keydown', e => { if (e.ctrlKey && e.key === 'Enter') saveAction(); });
+            }
+
+            function renderNoteEditor(wrap, userId, data) {
+                renderUI(wrap, userId); wrap.classList.add('active-wrap');
+                const popup = document.createElement('div'); popup.className = 'cn-popup note-popup active';
+                let hHtml = '';
+                if (data.history?.note) { const h = data.history.note; hHtml = `<div class="cn-history-block"><b>Неактуально с ${new Date(h.archivedAt).toLocaleString('ru-RU')} <span class="cn-author-tag">${h.archivedBy || '?'}</span>:</b>Заголовок: <i>${h.title}</i><br>Описание: <i>${h.desc}</i></div>`; }
+
+                popup.innerHTML = `<div class="cn-header"><strong>Редактирование заметки</strong></div>${hHtml}<input type="text" placeholder="Заголовок (обязательно)" value="${data.title || ''}" class="cn-input-title" autofocus><div class="cn-color-picker"><input type="color" value="${data.titleColor || '#0056b3'}" class="cn-color"><span>Цвет</span></div><textarea placeholder="Описание...">${data.desc || ''}</textarea><div class="cn-controls"><button class="cn-btn delete" title="Удалить">${ICONS.trash}</button>${data.title ? `<button class="cn-btn archive" title="В архив">${ICONS.archive}</button>` : ''}<div style="flex-grow:1"></div><span class="cn-timestamp" style="margin:0 10px 0 0;">Ctrl+Enter</span><button class="cn-btn save" title="Сохранить">${ICONS.save}</button><button class="cn-btn cancel" title="Отмена">${ICONS.cancel}</button></div>`;
+                wrap.children[1].appendChild(popup);
+
+                const saveAction = () => {
+                    const t = popup.querySelector('.cn-input-title').value.trim();
+                    if (!t) { popup.querySelector('.cn-input-title').style.borderColor = '#dc3545'; return; }
+                    popup.querySelector('.save').innerHTML = '<span class="cn-loader" style="margin:0"></span>';
+                    syncData(userId, { ...data, title: t, desc: popup.querySelector('textarea').value.trim(), titleColor: popup.querySelector('.cn-color').value, noteTimestamp: new Date().toISOString(), noteAuthor: CURRENT_USER }, () => renderUI(wrap, userId));
+                };
+
+                const archiveBtn = popup.querySelector('.archive');
+                if (archiveBtn) archiveBtn.addEventListener('click', () => {
+                    if(!confirm('В архив?')) return;
+                    const newHist = data.history || {}; newHist.note = { title: data.title, desc: data.desc, archivedAt: new Date().toISOString(), archivedBy: CURRENT_USER };
+                    archiveBtn.innerHTML = '<span class="cn-loader" style="margin:0"></span>';
+                    syncData(userId, { ...data, title: '', desc: '', titleColor: '#0056b3', noteTimestamp: '', noteAuthor: '', history: newHist }, () => renderUI(wrap, userId));
+                });
+
+                popup.querySelector('.save').addEventListener('click', saveAction);
+                popup.querySelector('.delete').addEventListener('click', () => syncData(userId, { ...data, title: '', desc: '', noteTimestamp: '', noteAuthor: '' }, () => renderUI(wrap, userId)));
+                popup.querySelector('.cancel').addEventListener('click', () => renderUI(wrap, userId));
+                popup.addEventListener('keydown', e => { if (e.ctrlKey && e.key === 'Enter') saveAction(); });
+            }
+
+            function closeAllPopups() {
+                document.querySelectorAll('.cn-wrap').forEach(wrap => {
+                    if (wrap.querySelector('.cn-popup.active')) {
+                        const m = wrap.parentNode.innerHTML.match(/\/cat(\d+)/);
+                        if(m) renderUI(wrap, m[1]);
+                    }
+                });
+            }
+
+            initNotesTags();
+        })();
+    }
+})();
