@@ -12,11 +12,8 @@
 (function() {
     'use strict';
 
-    // === НАСТРОЙКИ БАЗЫ ДАННЫХ (Firebase) ===
-    // Вставь сюда свою ссылку из вкладки Data и ОБЯЗАТЕЛЬНО оставь /claims.json в конце!
     const DB_URL = 'https://catwar-plak-default-rtdb.europe-west1.firebasedatabase.app/claims.json'; 
 
-    // 1. ПАРСИНГ ДАННЫХ ПОЛЬЗОВАТЕЛЯ НА ГЛАВНОЙ СТРАНИЦЕ
     if (window.location.pathname === '/' || window.location.pathname === '/index') {
         const nameEl = document.querySelector('#pr big');
         const idEl = document.querySelector('#id_val');
@@ -28,7 +25,6 @@
         return; 
     }
 
-    // 2. РАБОТА НА СТРАНИЦЕ /PLAK
     if (window.location.pathname === '/plak') {
         const myId = localStorage.getItem('cw_mod_id');
         const myName = localStorage.getItem('cw_mod_name');
@@ -40,7 +36,6 @@
 
         let claimsDb = {}; 
 
-        // Получение данных с Firebase
         function fetchClaims() {
             GM_xmlhttpRequest({
                 method: "GET",
@@ -54,7 +49,6 @@
             });
         }
 
-        // Отправка данных (занять тикет)
         function saveClaim(ticketId) {
             claimsDb[ticketId] = {
                 id: myId,
@@ -65,14 +59,12 @@
             syncWithServer();
         }
 
-        // Удаление данных (освободить тикет)
         function removeClaim(ticketId) {
             delete claimsDb[ticketId];
             updateUI();
             syncWithServer();
         }
 
-        // Синхронизация с Firebase
         function syncWithServer() {
             GM_xmlhttpRequest({
                 method: "PUT",
@@ -86,9 +78,8 @@
             });
         }
 
-        // Функция обновления внешнего вида тикетов
         function updateUI() {
-            // Теперь ищем кнопку "Пометить прочитанным" - она есть везде
+
             const actionBtns = document.querySelectorAll('a.ignor[href^="plak?cat="]');
             
             actionBtns.forEach(btn => {
@@ -105,19 +96,16 @@
                 
                 const linkEl = headerP.querySelector('b a'); 
 
-                // Ищем или создаем контейнер для наших кнопок
                 let actionSpan = pContainer.querySelector('.cw-action-span');
                 if (!actionSpan) {
                     actionSpan = document.createElement('span');
                     actionSpan.className = 'cw-action-span';
-                    // Вставляем наш спан перед кнопкой "Пометить сложным/несложным"
                     pContainer.appendChild(document.createTextNode(' | '));
                     pContainer.appendChild(actionSpan);
                 }
                 
                 actionSpan.innerHTML = ''; 
 
-                // Очищаем старые метки
                 const oldLabel = headerP.querySelector('.claimer-label');
                 if (oldLabel) oldLabel.remove();
 
@@ -171,13 +159,13 @@
                 }
             });
         }
-        document.addEventListener('submit', function(event) {
+document.addEventListener('submit', function(event) {
             const form = event.target;
             if (form && form.tagName === 'FORM') {
                 const catInput = form.querySelector('input[name="cat"]');
                 if (catInput && catInput.value) {
                     const ticketId = catInput.value;
-                    if (claimsDb[ticketId] && claimsDb[ticketId].id === myId) {
+                    if (claimsDb[ticketId]) { 
                         removeClaim(ticketId);
                     }
                 }
