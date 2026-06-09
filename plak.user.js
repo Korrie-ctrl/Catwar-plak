@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         CatWar Admin Helper: Бронь + Таймеры + Теги
+// @name         CatWar Plak
 // @namespace    http://tampermonkey.net/
 // @version      4.0
 // @description  Объединенный скрипт: кнопки брони (с фиксом), таймеры, шаблоны ответов и система тегов/заметок
