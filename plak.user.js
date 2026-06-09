@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         CatWar Plak
+// @name         CatWar Plak 
 // @namespace    http://tampermonkey.net/
-// @version      4.3
+// @version      4.4
 // @description  Объединенный скрипт: кнопки брони (с фиксом), таймеры, шаблоны ответов и система тегов/заметок
 // @author       Берсерк + Мыша + Панк-Рок 
 // @match        https://catwar.net/*
