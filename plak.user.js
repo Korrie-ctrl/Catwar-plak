@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         CatWar Admin Helper: Бронь + Таймеры + Шаблоны + Теги
+// @name         CatWar Plak
 // @namespace    http://tampermonkey.net/
 // @version      4.3
 // @description  Объединенный скрипт: кнопки брони (с фиксом), таймеры, шаблоны ответов и система тегов/заметок
-// @author       Берсерк + Мыша + Панк-Рок (Слияние)
+// @author       Берсерк + Мыша + Панк-Рок 
 // @match        https://catwar.net/*
 // @match        https://catwar.su/*
 // @grant        GM_xmlhttpRequest
@@ -19,7 +19,6 @@
 
     const path = window.location.pathname;
 
-    // === БЛОК 1: ПАРСИНГ ДАННЫХ ПОЛЬЗОВАТЕЛЯ (НА ГЛАВНОЙ) ===
     if (path === '/' || path === '/index') {
         const nameEl = document.querySelector('#pr big');
         const idEl = document.querySelector('#id_val');
@@ -31,11 +30,9 @@
         return; 
     }
 
-    // === БЛОК 2: ФУНКЦИОНАЛ БРОНИ И ТАЙМЕРОВ (только для /plak) ===
     if (path.startsWith('/plak')) {
         const DB_URL = 'https://catwar-plak-default-rtdb.europe-west1.firebasedatabase.app/claims.json'; 
 
-        // --- 2.1 Отображение забронированных и времени (от Мыши) ---
         function parseBookingTime(timeStr) {
             const now = new Date();
             const mskOffset = 3;
@@ -171,7 +168,6 @@
             });
         }
 
-        // --- 2.2 Функционал кнопок Занять/Освободить (от Берсерка) ---
         const myId = localStorage.getItem('cw_mod_id');
         const myName = localStorage.getItem('cw_mod_name');
         let claimsDb = {}; 
@@ -276,7 +272,6 @@
             });
         }
 
-        // Исправление: Бронь снимается при ответе ЛЮБОГО модератора
         document.addEventListener('submit', function(event) {
             const form = event.target;
             if (form && form.tagName === 'FORM') {
@@ -287,7 +282,6 @@
             }
         });
 
-        // Запуск модулей бронирования
         processBookedMessages();
         const plakObserver = new MutationObserver(function() {
             processBookedMessages();
@@ -300,7 +294,6 @@
         }
     }
 
-    // === БЛОК 3: ШАБЛОНЫ ОТВЕТОВ (для /plak, /saint_rabbit, /support) ===
     if (path.startsWith('/plak') || path.startsWith('/saint_rabbit') || path.startsWith('/support')) {
         const templates = {
             "Налог": `Здравствуйте,\n\nСожалею, но для оказания данной услуги Вам необходимо оплатить [url=https://catwar.net/rabbit_universe_new]налог за локации[/url]. Если эта функция недоступна на данный момент, подождите 2-3 дня.\n\nС уважением, Святой Кроль`,
@@ -403,7 +396,6 @@
         document.head.appendChild(style);
     }
 
-    // === БЛОК 4: ЗАМЕТКИ И ТЕГИ (от Панк-Рок, только для /plak) ===
     if (path.startsWith('/plak')) {
         (function() {
             const API_URL = 'https://script.google.com/macros/s/AKfycbxlofeuEtCo6uVfm2ogwFT_izt8OaihfPXpvwANnGhHe_I-yHk2DZYPh_RLI92fHKtu/exec';
