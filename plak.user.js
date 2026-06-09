@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      4.0
 // @description  Объединенный скрипт: кнопки брони (с фиксом), таймеры, шаблоны ответов и система тегов/заметок
-// @author       Берсерк + Мыша + Панк-Рок (Слияние)
+// @author       Берсерк + Мыша + Панк-Рок
 // @match        https://catwar.net/*
 // @match        https://catwar.su/*
 // @grant        GM_xmlhttpRequest
