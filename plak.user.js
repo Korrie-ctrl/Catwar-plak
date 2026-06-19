@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         CatWar Plak
+// @name         CatWarPlak
 // @namespace    http://tampermonkey.net/
 // @version      6.0
 // @description  Объединенный скрипт: бронь, таймеры, шаблоны, система тегов/заметок и чекер IP/VPN
