@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         CatWar Plak
+// @name         CatWar Plak 
 // @namespace    http://tampermonkey.net/
 // @version      5.0
 // @description  Объединенный скрипт: бронь, таймеры, шаблоны, система тегов/заметок и чекер IP/VPN
@@ -14,6 +14,7 @@
 // @connect      firebasedatabase.app
 // @connect      ip-api.com
 // ==/UserScript==
+
 
 (function() {
     'use strict';
