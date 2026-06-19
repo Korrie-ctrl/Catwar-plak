@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         CatWar Plak 
+// @name         CatWar Plak + VPN/Proxy Checker [АМС]
 // @namespace    http://tampermonkey.net/
-// @version      4.4
-// @description  Объединенный скрипт: кнопки брони (с фиксом), таймеры, шаблоны ответов и система тегов/заметок
-// @author       Берсерк + Мыша + Панк-Рок 
+// @version      5.0
+// @description  Объединенный скрипт: бронь, таймеры, шаблоны, система тегов/заметок и чекер IP/VPN
+// @author       Берсерк + Мыша + Панк-Рок + Почтовик
 // @match        https://catwar.net/*
 // @match        https://catwar.su/*
 // @grant        GM_xmlhttpRequest
@@ -12,18 +12,20 @@
 // @connect      script.googleusercontent.com
 // @connect      catwar-plak-default-rtdb.europe-west1.firebasedatabase.app
 // @connect      firebasedatabase.app
+// @connect      ip-api.com
 // ==/UserScript==
-
 
 (function() {
     'use strict';
 
     const path = window.location.pathname;
 
+    // ==========================================
+    // БЛОК 1: Сохранение данных пользователя
+    // ==========================================
     if (path === '/' || path === '/index') {
         const nameEl = document.querySelector('#pr big');
         const idEl = document.querySelector('#id_val');
-        
         if (nameEl && idEl) {
             localStorage.setItem('cw_mod_name', nameEl.innerText.trim());
             localStorage.setItem('cw_mod_id', idEl.innerText.trim());
@@ -31,6 +33,148 @@
         return; 
     }
 
+    // ==========================================
+    // БЛОК 2: Модуль проверки IP / VPN / Geo
+    // (Работает глобально на всех страницах логов и жалоб)
+    // ==========================================
+    (function initIPChecker() {
+        const ipRegex = /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/g;
+
+        function checkIP(ip, buttonElement) {
+            buttonElement.textContent = " ⏳ Загрузка...";
+            buttonElement.style.color = "orange";
+            buttonElement.style.pointerEvents = "none";
+
+            GM_xmlhttpRequest({
+                method: "GET",
+                url: `http://ip-api.com/json/${ip}?fields=status,country,city,isp,proxy,hosting`,
+                onload: function(response) {
+                    if (response.status === 200) {
+                        try {
+                            const data = JSON.parse(response.responseText);
+                            if (data.status === "success") {
+                                const isVPN = data.proxy || data.hosting;
+                                const geoInfo = `${data.country}, ${data.city} (${data.isp})`;
+
+                                if (isVPN) {
+                                    buttonElement.innerHTML = ` 🔴 [VPN/Proxy!] ${geoInfo}`;
+                                    buttonElement.style.color = "red";
+                                    buttonElement.style.fontWeight = "bold";
+                                } else {
+                                    buttonElement.innerHTML = ` 🟢 [Чисто] ${geoInfo}`;
+                                    buttonElement.style.color = "green";
+                                }
+                            } else {
+                                buttonElement.innerHTML = " ⚪ [Ошибка: Неверный IP]";
+                            }
+                        } catch (e) {
+                            buttonElement.innerHTML = " ⚪ [Ошибка обработки]";
+                        }
+                    } else {
+                        buttonElement.innerHTML = ` ⚪ [Ошибка API: ${response.status}]`;
+                    }
+                },
+                onerror: function() {
+                    buttonElement.innerHTML = " ⚪ [Ошибка сети. Проверьте разрешения]";
+                }
+            });
+        }
+
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('cw-ip-btn')) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const ipToVerify = e.target.getAttribute('data-ip');
+                if (ipToVerify) {
+                    checkIP(ipToVerify, e.target);
+                }
+            }
+        }, true); 
+
+        function scanAndInject(rootNode) {
+            const walker = document.createTreeWalker(rootNode, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+            let node;
+
+            while (node = walker.nextNode()) {
+                const parent = node.parentNode;
+                if (!parent) continue;
+                
+                if (parent.closest && parent.closest('.cw-ip-wrapper, .cw-ip-btn')) continue;
+                
+                const parentTag = parent.tagName.toLowerCase();
+                if (parentTag === 'script' || parentTag === 'style' || parentTag === 'textarea') continue;
+
+                if (ipRegex.test(node.nodeValue)) {
+                    nodesToReplace.push(node);
+                }
+            }
+
+            nodesToReplace.forEach(textNode => {
+                const text = textNode.nodeValue;
+                const fragment = document.createDocumentFragment();
+                let lastIndex = 0;
+                let match;
+
+                ipRegex.lastIndex = 0;
+                while ((match = ipRegex.exec(text)) !== null) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+
+                    const wrapper = document.createElement('span');
+                    wrapper.className = 'cw-ip-wrapper'; 
+
+                    const ipSpan = document.createElement('span');
+                    ipSpan.textContent = match[0];
+                    wrapper.appendChild(ipSpan);
+
+                    const checkBtn = document.createElement('span');
+                    checkBtn.textContent = " 🔍 [Проверить]";
+                    checkBtn.className = 'cw-ip-btn';
+                    checkBtn.setAttribute('data-ip', match[0]);
+                    
+                    checkBtn.style.cursor = "pointer";
+                    checkBtn.style.color = "#4287f5";
+                    checkBtn.style.fontSize = "0.9em";
+                    checkBtn.style.marginLeft = "4px";
+                    checkBtn.style.textDecoration = "underline";
+                    checkBtn.title = "Нажми для проверки (ip-api)";
+
+                    wrapper.appendChild(checkBtn);
+                    fragment.appendChild(wrapper);
+
+                    lastIndex = ipRegex.lastIndex;
+                }
+
+                fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                textNode.parentNode.replaceChild(fragment, textNode);
+            });
+        }
+
+        scanAndInject(document.body);
+
+        const observer = new MutationObserver((mutations) => {
+            let shouldScan = false;
+            for (const mutation of mutations) {
+                if (mutation.addedNodes.length > 0) {
+                    shouldScan = true;
+                    break;
+                }
+            }
+            if (shouldScan) {
+                observer.disconnect();
+                scanAndInject(document.body);
+                observer.observe(document.body, { childList: true, subtree: true });
+            }
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+    })();
+
+
+    // ==========================================
+    // БЛОК 3: Бронирование (только для /plak)
+    // ==========================================
     if (path.startsWith('/plak')) {
         const DB_URL = 'https://catwar-plak-default-rtdb.europe-west1.firebasedatabase.app/claims.json'; 
 
@@ -295,6 +439,10 @@
         }
     }
 
+
+    // ==========================================
+    // БЛОК 4: Шаблоны ответов (plak, support, saint_rabbit)
+    // ==========================================
     if (path.startsWith('/plak') || path.startsWith('/saint_rabbit') || path.startsWith('/support')) {
         const templates = {
             "Налог": `Здравствуйте,\n\nСожалею, но для оказания данной услуги Вам необходимо оплатить [url=https://catwar.net/rabbit_universe_new]налог за локации[/url]. Если эта функция недоступна на данный момент, подождите 2-3 дня.\n\nС уважением, Святой Кроль`,
@@ -397,6 +545,10 @@
         document.head.appendChild(style);
     }
 
+
+    // ==========================================
+    // БЛОК 5: Система заметок и тегов (только для /plak)
+    // ==========================================
     if (path.startsWith('/plak')) {
         (function() {
             const API_URL = 'https://script.google.com/macros/s/AKfycbxlofeuEtCo6uVfm2ogwFT_izt8OaihfPXpvwANnGhHe_I-yHk2DZYPh_RLI92fHKtu/exec';
@@ -674,4 +826,5 @@
             initNotesTags();
         })();
     }
+
 })();
