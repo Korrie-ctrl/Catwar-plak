@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         CatWar Plak + VPN/Proxy Checker [АМС]
+// @name         CatWar Plak
 // @namespace    http://tampermonkey.net/
 // @version      5.0
 // @description  Объединенный скрипт: бронь, таймеры, шаблоны, система тегов/заметок и чекер IP/VPN
