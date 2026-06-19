@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         CatWar Plak 
+// @name         CatWar Plak
 // @namespace    http://tampermonkey.net/
-// @version      5.0
+// @version      6.0
 // @description  Объединенный скрипт: бронь, таймеры, шаблоны, система тегов/заметок и чекер IP/VPN
 // @author       Берсерк + Мыша + Панк-Рок + Почтовик
 // @match        https://catwar.net/*
@@ -15,15 +15,11 @@
 // @connect      ip-api.com
 // ==/UserScript==
 
-
 (function() {
     'use strict';
 
     const path = window.location.pathname;
 
-    // ==========================================
-    // БЛОК 1: Сохранение данных пользователя
-    // ==========================================
     if (path === '/' || path === '/index') {
         const nameEl = document.querySelector('#pr big');
         const idEl = document.querySelector('#id_val');
@@ -34,10 +30,6 @@
         return; 
     }
 
-    // ==========================================
-    // БЛОК 2: Модуль проверки IP / VPN / Geo
-    // (Работает глобально на всех страницах логов и жалоб)
-    // ==========================================
     (function initIPChecker() {
         const ipRegex = /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/g;
 
@@ -173,9 +165,6 @@
     })();
 
 
-    // ==========================================
-    // БЛОК 3: Бронирование (только для /plak)
-    // ==========================================
     if (path.startsWith('/plak')) {
         const DB_URL = 'https://catwar-plak-default-rtdb.europe-west1.firebasedatabase.app/claims.json'; 
 
@@ -441,9 +430,6 @@
     }
 
 
-    // ==========================================
-    // БЛОК 4: Шаблоны ответов (plak, support, saint_rabbit)
-    // ==========================================
     if (path.startsWith('/plak') || path.startsWith('/saint_rabbit') || path.startsWith('/support')) {
         const templates = {
             "Налог": `Здравствуйте,\n\nСожалею, но для оказания данной услуги Вам необходимо оплатить [url=https://catwar.net/rabbit_universe_new]налог за локации[/url]. Если эта функция недоступна на данный момент, подождите 2-3 дня.\n\nС уважением, Святой Кроль`,
@@ -547,9 +533,6 @@
     }
 
 
-    // ==========================================
-    // БЛОК 5: Система заметок и тегов (только для /plak)
-    // ==========================================
     if (path.startsWith('/plak')) {
         (function() {
             const API_URL = 'https://script.google.com/macros/s/AKfycbxlofeuEtCo6uVfm2ogwFT_izt8OaihfPXpvwANnGhHe_I-yHk2DZYPh_RLI92fHKtu/exec';
